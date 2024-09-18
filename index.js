@@ -217,7 +217,9 @@ async function main() {
 cron.schedule("0 * * * *", () => {
   const message = `Current balance: $${currentBalance.toFixed(
     2
-  )} in ${currentTokenSymbol}`;
+  )} in ${currentTokenSymbol} \n
+  *Number of swaps:* ${currentNumberOfSwaps} \n
+  *Note:* No fees are included in the profit calculation`;
   sendTelegramMessage(message);
   console.log(`Telegram message sent: ${message}`);
 });
