@@ -59,7 +59,7 @@ const YOUR_WALLET_ADDRESS = "0x9ed042A64AD65BBcC645832921618738D709Ca67";
 
 // Telegram Bot Setup
 const TELEGRAM_BOT_TOKEN = "7854882662:AAFUF1UkHmsRzttgS0KDfgHcIrJxX4EQ6Qw";
-const CHAT_ID = "6416507389"; // Replace with your chat ID
+const CHAT_IDS = ["6416507389", "948741015"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: false });
 
 // Function to get a quote
@@ -114,7 +114,9 @@ const saveState = () => {
 };
 
 // Cron job running every 3 minutes
-cron.schedule("*/3 * * * *", async () => {
+cron.schedule("*/3 * * * *", main);
+
+async function main() {
   console.log("---------------------------------------");
   console.log(`Running process at ${new Date().toLocaleTimeString()}`);
   console.log(
@@ -194,13 +196,28 @@ cron.schedule("*/3 * * * *", async () => {
   } else {
     console.log("No profitable trade found.");
   }
-});
+}
 
-// Cron job to send Telegram balance update every hour
 cron.schedule("0 * * * *", () => {
   const message = `Current balance: $${currentBalance.toFixed(
     2
   )} in ${currentTokenSymbol}`;
-  bot.sendMessage(CHAT_ID, message);
+  sendTelegramMessage(message);
   console.log(`Telegram message sent: ${message}`);
 });
+
+async function sendTelegramMessage(message) {
+  try {
+    await Promise.all(
+      CHAT_IDS.map((chatId) =>
+        bot.sendMessage(chatId, message, { parse_mode: "Markdown" })
+      )
+    );
+    console.log("Message sent to all chat IDs.");
+  } catch (error) {
+    console.error("Failed to send message to all chat IDs:", error);
+  }
+}
+
+main();
+sendTelegramMessage("Bot starting...");
