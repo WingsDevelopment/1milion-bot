@@ -23,8 +23,8 @@ const tokenConfig = {
     address: "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376",
     decimals: 6,
   },
-  DOLA: {
-    address: "0x4621b7A9c75199271F773Ebd9A499dbd165c3191",
+  DAI: {
+    address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
     decimals: 18,
   },
   eUSD: {
