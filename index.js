@@ -203,7 +203,9 @@ async function main() {
     currentNumberOfSwaps += 1;
 
     console.log(
-      `Updated balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}`
+      `Updated balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}
+      Number of swaps: ${currentNumberOfSwaps}
+      No fees are included in the profit calculation`
     );
     // Save state to file
     saveState();
