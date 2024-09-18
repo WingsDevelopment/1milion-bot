@@ -62,7 +62,7 @@ const YOUR_WALLET_ADDRESS = "0x9ed042A64AD65BBcC645832921618738D709Ca67";
 
 // Telegram Bot Setup
 const TELEGRAM_BOT_TOKEN = "7854882662:AAFUF1UkHmsRzttgS0KDfgHcIrJxX4EQ6Qw";
-const CHAT_IDS = ["6416507389", "948741015"];
+const CHAT_IDS = ["6416507389", "948741015", "1774668575"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: false });
 
 // Function to get a quote
