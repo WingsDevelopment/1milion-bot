@@ -3,6 +3,7 @@ const cron = require("node-cron");
 const fs = require("fs");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
+const BigNumber = require("bignumber.js");
 
 // Token configuration with decimals
 const tokenConfig = {
@@ -38,7 +39,8 @@ const stateFilePath = path.join(__dirname, "state.json");
 // Load or initialize state
 let state = {
   currentTokenSymbol: Object.keys(tokenConfig)[0],
-  currentBalance: 10000, // Starting with $10,000
+  currentBalance: "10000", // Starting with $10,000 as a string
+  numberOfSwaps: 0,
 };
 
 // Load state from file
@@ -52,7 +54,8 @@ if (fs.existsSync(stateFilePath)) {
 
 let currentTokenSymbol = state.currentTokenSymbol;
 let currentTokenInfo = tokenConfig[currentTokenSymbol];
-let currentBalance = state.currentBalance;
+let currentBalance = new BigNumber(state.currentBalance);
+let currentNumberOfSwaps = state.numberOfSwaps;
 
 // Your wallet address (replace with your actual address)
 const YOUR_WALLET_ADDRESS = "0x9ed042A64AD65BBcC645832921618738D709Ca67";
@@ -95,12 +98,15 @@ const getQuote = async (
 // Function to simulate trade
 const simulateTrade = (quote) => {
   console.log("Simulating trade...");
+  const fromAmountDisplay = new BigNumber(quote.action.fromAmount)
+    .dividedBy(new BigNumber(10).pow(quote.action.fromToken.decimals))
+    .toFixed(2);
+  const toAmountDisplay = new BigNumber(quote.estimate.toAmount)
+    .dividedBy(new BigNumber(10).pow(quote.action.toToken.decimals))
+    .toFixed(2);
+
   console.log(
-    `Trade executed: Swapped ${(
-      quote.action.fromAmount / Math.pow(10, quote.action.fromToken.decimals)
-    ).toFixed(2)} ${quote.action.fromToken.symbol} for ${(
-      quote.estimate.toAmount / Math.pow(10, quote.action.toToken.decimals)
-    ).toFixed(2)} ${quote.action.toToken.symbol}`
+    `Trade executed: Swapped ${fromAmountDisplay} ${quote.action.fromToken.symbol} for ${toAmountDisplay} ${quote.action.toToken.symbol}`
   );
 };
 
@@ -108,7 +114,8 @@ const simulateTrade = (quote) => {
 const saveState = () => {
   const newState = {
     currentTokenSymbol,
-    currentBalance,
+    currentBalance: currentBalance.toString(),
+    numberOfSwaps: currentNumberOfSwaps,
   };
   fs.writeFileSync(stateFilePath, JSON.stringify(newState, null, 2));
 };
@@ -123,7 +130,7 @@ async function main() {
     `Current balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}`
   );
 
-  const fromChain = "8453"; // Assuming tokens are on Ethereum; adjust if needed
+  const fromChain = "8453"; // Adjust if needed
   const toChain = "8453";
 
   const fromTokenSymbol = currentTokenSymbol;
@@ -131,7 +138,7 @@ async function main() {
   const fromTokenAddress = fromTokenInfo.address;
   const fromTokenDecimals = fromTokenInfo.decimals;
 
-  let bestProfit = -Infinity;
+  let bestProfit = new BigNumber(-1e30); // Initialize to a large negative number
   let bestQuote = null;
 
   // Prepare all quote requests
@@ -143,9 +150,9 @@ async function main() {
     const toTokenAddress = toTokenInfo.address;
     const toTokenDecimals = toTokenInfo.decimals;
 
-    const fromAmount = (
-      currentBalance * Math.pow(10, fromTokenDecimals)
-    ).toFixed(0);
+    const fromAmount = currentBalance
+      .multipliedBy(new BigNumber(10).pow(fromTokenDecimals))
+      .toFixed(0);
 
     // Prepare the quote promise
     const quotePromise = getQuote(
@@ -159,8 +166,10 @@ async function main() {
       if (!quote) return null;
 
       // Calculate potential profit
-      const toAmount = quote.estimate.toAmount / Math.pow(10, toTokenDecimals);
-      const potentialProfit = toAmount - currentBalance;
+      const toAmount = new BigNumber(quote.estimate.toAmount).dividedBy(
+        new BigNumber(10).pow(toTokenDecimals)
+      );
+      const potentialProfit = toAmount.minus(currentBalance);
 
       console.log(
         `Potential trade from ${fromTokenSymbol} to ${toTokenSymbol}:`
@@ -168,7 +177,10 @@ async function main() {
       console.log(`  Receive amount: $${toAmount.toFixed(2)}`);
       console.log(`  Potential profit: $${potentialProfit.toFixed(2)}`);
 
-      if (potentialProfit > bestProfit && potentialProfit < 30) {
+      if (
+        potentialProfit.isGreaterThan(bestProfit) &&
+        potentialProfit.isLessThan(30)
+      ) {
         bestProfit = potentialProfit;
         bestQuote = quote;
       }
@@ -182,12 +194,14 @@ async function main() {
   console.log({ bestQuote });
 
   // Simulate the best trade if profitable
-  if (bestQuote && bestProfit > 0) {
+  if (bestQuote && bestProfit.isGreaterThan(0)) {
     simulateTrade(bestQuote);
     // Update state
-    currentBalance += bestProfit;
+    currentBalance = currentBalance.plus(bestProfit);
     currentTokenSymbol = bestQuote.action.toToken.symbol;
     currentTokenInfo = tokenConfig[currentTokenSymbol];
+    currentNumberOfSwaps += 1;
+
     console.log(
       `Updated balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}`
     );
@@ -215,9 +229,8 @@ async function sendTelegramMessage(message) {
     );
     console.log("Message sent to all chat IDs.");
   } catch (error) {
-    console.error("Failed to send message to all chat IDs:", error);
+    console.error("Failed to send message to all chat IDs:");
   }
 }
 
-main();
 sendTelegramMessage("Bot starting...");
