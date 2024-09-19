@@ -37,6 +37,8 @@ const tokenConfig = {
   USDT: getTokenConfig("USDT_ADDRESS", "USDT_DECIMALS"),
 };
 
+console.log({ tokenConfig });
+
 // Load or initialize state
 let state = {
   currentTokenSymbol:
@@ -229,6 +231,6 @@ async function sendTelegramMessage(message) {
   }
 }
 
-sendTelegramMessage(
-  `Ovooo, cao ja sam stojce! I moj config je: ${configMessage}`
-);
+// sendTelegramMessage(
+//   `Ovooo, cao ja sam stojce! I moj config je: ${configMessage}`
+// );
