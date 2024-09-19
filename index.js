@@ -6,58 +6,47 @@ const TelegramBot = require("node-telegram-bot-api");
 const BigNumber = require("bignumber.js");
 require("dotenv").config();
 
+//42161 - Arbitrum
+// 137 - Polygon
+// 42220 - celo
 const minProfit = parseFloat(process.env.MIN_PROFIT);
 const ignoreGreaterThenProfit = parseFloat(
   process.env.IGNORE_GREATER_THEN_PROFIT
 );
 // Your wallet address (replace with your actual address)
 const YOUR_WALLET_ADDRESS = process.env.WALLET_ADDRESS;
+const CHAIN_ID = process.env.CHAIN_ID;
 
-// Token configuration with decimals
-const tokenConfig = {
-  USDC: {
-    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    decimals: 6,
-  },
-  USDM: {
-    address: "0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C",
-    decimals: 18,
-  },
-  "USD+": {
-    address: "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376",
-    decimals: 6,
-  },
-  DAI: {
-    address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
-    decimals: 18,
-  },
-  eUSD: {
-    address: "0xCfA3Ef56d303AE4fAabA0592388F19D7C3399FB4",
-    decimals: 18,
-  },
+require("dotenv").config(); // Load environment variables
+
+const getTokenConfig = (addressEnv, decimalsEnv) => {
+  const address = process.env[addressEnv];
+  const decimals = process.env[decimalsEnv]
+    ? parseInt(process.env[decimalsEnv], 18)
+    : undefined;
+
+  return address ? { address, decimals } : undefined;
 };
 
-// Paths
-const stateFilePath = path.join(__dirname, "state.json");
+const tokenConfig = {
+  USDC: getTokenConfig("USDC_ADDRESS", "USDC_DECIMALS"),
+  USDM: getTokenConfig("USDM_ADDRESS", "USDM_DECIMALS"),
+  "USD+": getTokenConfig("USD_PLUS_ADDRESS", "USD_PLUS_DECIMALS"),
+  DAI: getTokenConfig("DAI_ADDRESS", "DAI_DECIMALS"),
+  eUSD: getTokenConfig("EUSD_ADDRESS", "EUSD_DECIMALS"),
+  USDT: getTokenConfig("USDT_ADDRESS", "USDT_DECIMALS"),
+};
 
 // Load or initialize state
 let state = {
-  currentTokenSymbol: Object.keys(tokenConfig)[0],
-  currentBalance: "10000", // Starting with $10,000 as a string
-  numberOfSwaps: 0,
+  currentTokenSymbol:
+    Object.keys(tokenConfig)[parseInt(process.env.CURRENT_INDEX || 0)],
+  currentBalance: process.env.CURRENT_BALANCE || "10000",
+  numberOfSwaps: parseInt(process.env.NUMBER_OF_SWAPS || 0),
 };
 
-// Load state from file
-if (fs.existsSync(stateFilePath)) {
-  const savedState = fs.readFileSync(stateFilePath, "utf8");
-  state = JSON.parse(savedState);
-} else {
-  // Save initial state
-  fs.writeFileSync(stateFilePath, JSON.stringify(state, null, 2));
-}
-
 let currentTokenSymbol = state.currentTokenSymbol;
-let currentTokenInfo = tokenConfig[currentTokenSymbol];
+let currentTokenInfo = tokenConfig[currentTokenSymbol] || {};
 let currentBalance = new BigNumber(state.currentBalance);
 let currentNumberOfSwaps = state.numberOfSwaps;
 
@@ -111,18 +100,8 @@ const simulateTrade = (quote) => {
   );
 };
 
-// Function to save state to file
-const saveState = () => {
-  const newState = {
-    currentTokenSymbol,
-    currentBalance: currentBalance.toString(),
-    numberOfSwaps: currentNumberOfSwaps,
-  };
-  fs.writeFileSync(stateFilePath, JSON.stringify(newState, null, 2));
-};
-
 // Cron job running every 3 minutes
-cron.schedule("*/6 * * * *", main);
+cron.schedule("*/4 * * * *", main);
 
 async function main() {
   console.log("---------------------------------------");
@@ -131,8 +110,8 @@ async function main() {
     `Current balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}`
   );
 
-  const fromChain = "8453"; // Adjust if needed
-  const toChain = "8453";
+  const fromChain = CHAIN_ID; // Adjust if needed
+  const toChain = CHAIN_ID;
 
   const fromTokenSymbol = currentTokenSymbol;
   const fromTokenInfo = currentTokenInfo;
@@ -145,7 +124,12 @@ async function main() {
   // Prepare all quote requests
   const quotePromises = [];
 
+  if (!fromTokenInfo) {
+    console.log("Token not found");
+    return;
+  }
   for (const [toTokenSymbol, toTokenInfo] of Object.entries(tokenConfig)) {
+    if (toTokenSymbol === fromTokenSymbol || !toTokenInfo) continue;
     if (toTokenSymbol === fromTokenSymbol) continue;
 
     const toTokenAddress = toTokenInfo.address;
@@ -209,8 +193,6 @@ async function main() {
       Number of swaps: ${currentNumberOfSwaps}
       No fees are included in the profit calculation`
     );
-    // Save state to file
-    saveState();
   } else {
     console.log("No profitable trade found.");
   }
@@ -219,14 +201,17 @@ async function main() {
 const configMessage = `\n
 *MinProfit:* ${minProfit} \n
 *IgnoreGreaterThenProfit:* ${ignoreGreaterThenProfit}
-*WalletAddress:* ${YOUR_WALLET_ADDRESS}`;
+*WalletAddress:* ${YOUR_WALLET_ADDRESS}
+*ChainId:* ${CHAIN_ID}
+*CurrentTokenSymbol:* ${currentTokenSymbol}
+*CurrentBalance:* ${currentBalance.toFixed(2)}`;
 
 cron.schedule("0 * * * *", () => {
   const message = `Current balance: $${currentBalance.toFixed(
     2
-  )} in ${currentTokenSymbol} \n
-  *Number of swaps:* ${currentNumberOfSwaps} \n
-  *Note:* No fees are included in the profit calculation ${configMessage}`;
+  )} in ${currentTokenSymbol}\n
+*Number of swaps:* ${currentNumberOfSwaps} \n
+*Note:* No fees are included in the profit calculation ${configMessage}`;
   sendTelegramMessage(message);
   console.log(`Telegram message sent: ${message}`);
 });
