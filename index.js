@@ -4,6 +4,12 @@ const fs = require("fs");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
 const BigNumber = require("bignumber.js");
+require("dotenv").config();
+
+const minProfit = parseFloat(process.env.MIN_PROFIT);
+const ignoreGreaterThenProfit = parseFloat(
+  process.env.IGNORE_GREATER_THEN_PROFIT
+);
 
 // Token configuration with decimals
 const tokenConfig = {
@@ -179,7 +185,8 @@ async function main() {
 
       if (
         potentialProfit.isGreaterThan(bestProfit) &&
-        potentialProfit.isLessThan(30)
+        potentialProfit.isLessThan(ignoreGreaterThenProfit) &&
+        potentialProfit.isGreaterThan(minProfit)
       ) {
         bestProfit = potentialProfit;
         bestQuote = quote;
@@ -237,4 +244,6 @@ async function sendTelegramMessage(message) {
   }
 }
 
-sendTelegramMessage("Ovooo, cao ja sam stojce!");
+sendTelegramMessage(`Ovooo, cao ja sam stojce! I moj config je: \n
+*MinProfit:* ${minProfit} \n
+*IgnoreGreaterThenProfit:* ${ignoreGreaterThenProfit}`);
