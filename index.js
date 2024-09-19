@@ -10,6 +10,8 @@ const minProfit = parseFloat(process.env.MIN_PROFIT);
 const ignoreGreaterThenProfit = parseFloat(
   process.env.IGNORE_GREATER_THEN_PROFIT
 );
+// Your wallet address (replace with your actual address)
+const YOUR_WALLET_ADDRESS = process.env.WALLET_ADDRESS;
 
 // Token configuration with decimals
 const tokenConfig = {
@@ -44,8 +46,8 @@ const stateFilePath = path.join(__dirname, "state.json");
 
 // Load or initialize state
 let state = {
-  currentTokenSymbol: Object.keys(tokenConfig)[0],
-  currentBalance: "10000", // Starting with $10,000 as a string
+  currentTokenSymbol: Object.keys(tokenConfig)[2],
+  currentBalance: "10015.60", // Starting with $10,000 as a string
   numberOfSwaps: 0,
 };
 
@@ -62,9 +64,6 @@ let currentTokenSymbol = state.currentTokenSymbol;
 let currentTokenInfo = tokenConfig[currentTokenSymbol];
 let currentBalance = new BigNumber(state.currentBalance);
 let currentNumberOfSwaps = state.numberOfSwaps;
-
-// Your wallet address (replace with your actual address)
-const YOUR_WALLET_ADDRESS = "0x9ed042A64AD65BBcC645832921618738D709Ca67";
 
 // Telegram Bot Setup
 const TELEGRAM_BOT_TOKEN = "7854882662:AAFUF1UkHmsRzttgS0KDfgHcIrJxX4EQ6Qw";
@@ -127,7 +126,7 @@ const saveState = () => {
 };
 
 // Cron job running every 3 minutes
-cron.schedule("*/3 * * * *", main);
+cron.schedule("*/6 * * * *", main);
 
 async function main() {
   console.log("---------------------------------------");
