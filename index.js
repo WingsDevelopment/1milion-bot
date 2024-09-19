@@ -220,12 +220,17 @@ async function main() {
   }
 }
 
+const configMessage = `\n
+*MinProfit:* ${minProfit} \n
+*IgnoreGreaterThenProfit:* ${ignoreGreaterThenProfit}
+*WalletAddress:* ${YOUR_WALLET_ADDRESS}`;
+
 cron.schedule("0 * * * *", () => {
   const message = `Current balance: $${currentBalance.toFixed(
     2
   )} in ${currentTokenSymbol} \n
   *Number of swaps:* ${currentNumberOfSwaps} \n
-  *Note:* No fees are included in the profit calculation`;
+  *Note:* No fees are included in the profit calculation ${configMessage}`;
   sendTelegramMessage(message);
   console.log(`Telegram message sent: ${message}`);
 });
@@ -243,6 +248,6 @@ async function sendTelegramMessage(message) {
   }
 }
 
-sendTelegramMessage(`Ovooo, cao ja sam stojce! I moj config je: \n
-*MinProfit:* ${minProfit} \n
-*IgnoreGreaterThenProfit:* ${ignoreGreaterThenProfit}`);
+sendTelegramMessage(
+  `Ovooo, cao ja sam stojce! I moj config je: ${configMessage}`
+);
