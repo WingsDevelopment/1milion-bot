@@ -35,6 +35,7 @@ const tokenConfig = {
   DAI: getTokenConfig("DAI_ADDRESS", "DAI_DECIMALS"),
   eUSD: getTokenConfig("EUSD_ADDRESS", "EUSD_DECIMALS"),
   USDT: getTokenConfig("USDT_ADDRESS", "USDT_DECIMALS"),
+  CUSD: getTokenConfig("CUSD_ADDRESS", "CUSD_DECIMALS"),
 };
 
 console.log({ tokenConfig });
