@@ -15,28 +15,47 @@ const ignoreGreaterThenProfit = parseFloat(
 );
 // Your wallet address (replace with your actual address)
 const YOUR_WALLET_ADDRESS = process.env.WALLET_ADDRESS;
-const CHAIN_ID = process.env.CHAIN_ID;
+const CHAIN_ID = parseInt(process.env.CHAIN_ID);
 
-require("dotenv").config(); // Load environment variables
-
-const getTokenConfig = (addressEnv, decimalsEnv) => {
-  const address = process.env[addressEnv];
-  const decimals = process.env[decimalsEnv]
-    ? parseInt(process.env[decimalsEnv], 18)
-    : undefined;
-
-  return address ? { address, decimals } : undefined;
+const tokenConfigBase = {
+  USDC: {
+    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    decimals: 6,
+  },
+  USDM: {
+    address: "0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C",
+    decimals: 18,
+  },
+  "USD+": {
+    address: "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376",
+    decimals: 6,
+  },
+  DAI: {
+    address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    decimals: 18,
+  },
+  eUSD: {
+    address: "0xCfA3Ef56d303AE4fAabA0592388F19D7C3399FB4",
+    decimals: 18,
+  },
 };
 
-const tokenConfig = {
-  USDC: getTokenConfig("USDC_ADDRESS", "USDC_DECIMALS"),
-  USDM: getTokenConfig("USDM_ADDRESS", "USDM_DECIMALS"),
-  "USD+": getTokenConfig("USD_PLUS_ADDRESS", "USD_PLUS_DECIMALS"),
-  DAI: getTokenConfig("DAI_ADDRESS", "DAI_DECIMALS"),
-  eUSD: getTokenConfig("EUSD_ADDRESS", "EUSD_DECIMALS"),
-  USDT: getTokenConfig("USDT_ADDRESS", "USDT_DECIMALS"),
-  CUSD: getTokenConfig("CUSD_ADDRESS", "CUSD_DECIMALS"),
+const tokenConfigCelo = {
+  USDC: {
+    address: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+    decimals: 6,
+  },
+  USDT: {
+    address: "0x617f3112bf5397D0467D315cC709EF968D9ba546",
+    decimals: 6,
+  },
+  CUSD: {
+    address: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
+    decimals: 18,
+  },
 };
+
+const tokenConfig = CHAIN_ID == 8453 ? tokenConfigBase : tokenConfigCelo;
 
 console.log({ tokenConfig });
 
@@ -132,7 +151,6 @@ async function main() {
     return;
   }
   for (const [toTokenSymbol, toTokenInfo] of Object.entries(tokenConfig)) {
-    if (toTokenSymbol === fromTokenSymbol || !toTokenInfo) continue;
     if (toTokenSymbol === fromTokenSymbol) continue;
 
     const toTokenAddress = toTokenInfo.address;
@@ -201,6 +219,8 @@ async function main() {
   }
 }
 
+main();
+
 const configMessage = `\n
 *MinProfit:* ${minProfit} \n
 *IgnoreGreaterThenProfit:* ${ignoreGreaterThenProfit}
@@ -231,7 +251,3 @@ async function sendTelegramMessage(message) {
     console.error("Failed to send message to all chat IDs:");
   }
 }
-
-// sendTelegramMessage(
-//   `Ovooo, cao ja sam stojce! I moj config je: ${configMessage}`
-// );
