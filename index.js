@@ -23,10 +23,6 @@ const tokenConfig = {
     address: "0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C",
     decimals: 18,
   },
-  USDz: {
-    address: "0x04D5ddf5f3a8939889F11E97f8c4BB48317F1938",
-    decimals: 18,
-  },
   "USD+": {
     address: "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376",
     decimals: 6,
@@ -46,8 +42,8 @@ const stateFilePath = path.join(__dirname, "state.json");
 
 // Load or initialize state
 let state = {
-  currentTokenSymbol: Object.keys(tokenConfig)[2],
-  currentBalance: "10015.60", // Starting with $10,000 as a string
+  currentTokenSymbol: Object.keys(tokenConfig)[0],
+  currentBalance: "10000", // Starting with $10,000 as a string
   numberOfSwaps: 0,
 };
 
