@@ -55,9 +55,40 @@ const tokenConfigCelo = {
   },
 };
 
-const tokenConfig = CHAIN_ID == 8453 ? tokenConfigBase : tokenConfigCelo;
+const tokenConfigArbitrum = {
+  USDC: {
+    address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    decimals: 6,
+  },
+  USDM: {
+    address: "0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C",
+    decimals: 18,
+  },
+  "USD+": {
+    address: "0xe80772Eaf6e2E18B651F160Bc9158b2A5caFCA65",
+    decimals: 6,
+  },
+  DAI: {
+    address: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    decimals: 18,
+  },
+  USDT: {
+    address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    decimals: 6,
+  },
+};
 
-console.log({ tokenConfig });
+const getTokenConfig = () => {
+  if (CHAIN_ID == 42161) {
+    return tokenConfigArbitrum;
+  } else if (CHAIN_ID == 8453) {
+    return tokenConfigBase;
+  } else {
+    return tokenConfigCelo;
+  }
+};
+
+const tokenConfig = getTokenConfig();
 
 // Load or initialize state
 let state = {
