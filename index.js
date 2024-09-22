@@ -230,7 +230,7 @@ async function main() {
         toTokenSymbol === "USDC" &&
         currentBalance
           .plus(potentialProfit)
-          .isGreaterThan(previousUsdcAmount) &&
+          .isGreaterThan(previousUsdcAmount + minProfit) &&
         potentialProfit.isLessThan(ignoreGreaterThenProfit)
       ) {
         usdcProfit = potentialProfit;
