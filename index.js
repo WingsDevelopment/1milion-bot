@@ -102,6 +102,7 @@ let currentTokenSymbol = state.currentTokenSymbol;
 let currentTokenInfo = tokenConfig[currentTokenSymbol] || {};
 let currentBalance = new BigNumber(state.currentBalance);
 let currentNumberOfSwaps = state.numberOfSwaps;
+let previousUsdcAmount = currentBalance;
 
 // Telegram Bot Setup
 const TELEGRAM_BOT_TOKEN = "7854882662:AAFUF1UkHmsRzttgS0KDfgHcIrJxX4EQ6Qw";
@@ -174,6 +175,9 @@ async function main() {
   let bestProfit = new BigNumber(-1e30); // Initialize to a large negative number
   let bestQuote = null;
 
+  let usdcProfit = new BigNumber(-1e30);
+  let usdcQuote = null;
+
   // Prepare all quote requests
   const quotePromises = [];
 
@@ -222,6 +226,16 @@ async function main() {
         bestProfit = potentialProfit;
         bestQuote = quote;
       }
+      if (
+        toTokenSymbol === "USDC" &&
+        currentBalance
+          .plus(potentialProfit)
+          .isGreaterThan(previousUsdcAmount) &&
+        potentialProfit.isLessThan(ignoreGreaterThenProfit)
+      ) {
+        usdcProfit = potentialProfit;
+        usdcQuote = quote;
+      }
     });
 
     quotePromises.push(quotePromise);
@@ -229,22 +243,31 @@ async function main() {
 
   // Run all quote requests in parallel
   await Promise.all(quotePromises);
-  console.log({ bestQuote });
+
+  let quote = bestQuote || usdcQuote;
+  let profit = bestProfit || usdcProfit;
 
   // Simulate the best trade if profitable
-  if (bestQuote && bestProfit.isGreaterThan(0)) {
-    simulateTrade(bestQuote);
+  if (quote && profit.isGreaterThan(0)) {
+    simulateTrade(quote);
     // Update state
-    currentBalance = currentBalance.plus(bestProfit);
-    currentTokenSymbol = bestQuote.action.toToken.symbol;
+    currentTokenSymbol = quote.action.toToken.symbol;
+    currentBalance = currentBalance.plus(profit);
     currentTokenInfo = tokenConfig[currentTokenSymbol];
     currentNumberOfSwaps += 1;
+    if (currentTokenSymbol === "USDC") {
+      previousUsdcAmount = currentBalance;
+    }
 
     console.log(
       `Updated balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}
       Number of swaps: ${currentNumberOfSwaps}
-      No fees are included in the profit calculation`
+      No fees are included in the profit calculation
+      ${usdcProfit ? `USDC profit: $${usdcProfit.toFixed(2)}` : ""}`
     );
+    if (!bestProfit) {
+      console.log("Trade to USDC has been made.");
+    }
   } else {
     console.log("No profitable trade found.");
   }
@@ -261,9 +284,8 @@ const configMessage = `\n
 *CurrentBalance:* ${currentBalance.toFixed(2)}`;
 
 cron.schedule("0 * * * *", () => {
-  const message = `Current balance: $${currentBalance.toFixed(
-    2
-  )} in ${currentTokenSymbol}\n
+  const message = `Version 2.0-stj \n
+  Current balance: $${currentBalance.toFixed(2)} in ${currentTokenSymbol}\n
 *Number of swaps:* ${currentNumberOfSwaps} \n
 *Note:* No fees are included in the profit calculation ${configMessage}`;
   sendTelegramMessage(message);
